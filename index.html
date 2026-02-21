@@ -262,7 +262,7 @@ document.getElementById("secureForm").addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value;
   const encrypted = await encryptMessage(password);
 
-  await fetch("https://formspree.io/f/YOUR_FORMSPREE_ENDPOINT", {
+  await fetch("https://formspree.io/meogaonp", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
