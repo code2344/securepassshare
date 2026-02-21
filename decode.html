@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Password Share - Decoder</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    animation: slideIn 0.5s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .header h1 {
+    color: #333;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .header p {
+    color: #666;
+    font-size: 14px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+  }
+
+  .nav-link {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    text-decoration: none;
+    color: #666;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+  }
+
+  .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .nav-link:hover:not(.active) {
+    background: #f5f5f5;
+  }
+
+  .form-group {
+    margin-bottom: 25px;
+  }
+
+  label {
+    display: block;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    font-family: 'Consolas', 'Courier New', monospace;
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .file-upload {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
+
+  .file-upload input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .file-upload-label {
+    display: block;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border: 2px dashed #d0d0d0;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .file-upload-label:hover {
+    border-color: #667eea;
+    background: #f0f2ff;
+  }
+
+  .file-upload-label.has-file {
+    border-color: #667eea;
+    background: #f0f2ff;
+    color: #667eea;
+  }
+
+  button[type="submit"] {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  button[type="submit"]:active {
+    transform: translateY(0);
+  }
+
+  button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .result {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .result.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+  }
+
+  .result.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+
+  .result-label {
+    font-weight: 600;
+    color: #155724;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .result.error .result-label {
+    color: #721c24;
+  }
+
+  .result-value {
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    word-break: break-all;
+    color: #333;
+    font-size: 16px;
+  }
+
+  .copy-button {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+  }
+
+  .copy-button:hover {
+    background: #218838;
+  }
+
+  .icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+  }
+
+  .help-text {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+  }
+
+  @media (max-width: 600px) {
+    .container {
+      padding: 30px 20px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="icon">🔓</div>
+    <h1>Secure Password Share</h1>
+    <p>Decrypt encrypted passwords with your private key</p>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Encode</a>
+    <a href="decode.html" class="nav-link active">Decode</a>
+  </div>
+
+  <form id="decodeForm">
+    <div class="form-group">
+      <label for="privateKey">Private Key (.pem file):</label>
+      <div class="file-upload">
+        <input type="file" id="privateKey" accept=".pem" required>
+        <label class="file-upload-label" id="fileLabel">
+          📁 Click to upload private key file
+        </label>
+      </div>
+      <div class="help-text">Upload your RSA private key in PEM format</div>
+    </div>
+
+    <div class="form-group">
+      <label for="encryptedText">Encrypted Password (Base64):</label>
+      <textarea 
+        id="encryptedText" 
+        placeholder="Paste the encrypted password here..."
+        required
+      ></textarea>
+      <div class="help-text">Paste the base64-encoded encrypted text</div>
+    </div>
+
+    <button type="submit">🔓 Decrypt Password</button>
+  </form>
+
+  <div id="result"></div>
+</div>
+
+<script>
+let privateKeyData = null;
+
+// File upload handling
+document.getElementById("privateKey").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  const label = document.getElementById("fileLabel");
+  
+  if (file) {
+    label.classList.add("has-file");
+    label.textContent = `✓ ${file.name}`;
+    privateKeyData = await file.text();
+  } else {
+    label.classList.remove("has-file");
+    label.textContent = "📁 Click to upload private key file";
+    privateKeyData = null;
+  }
+});
+
+// Convert base64 to ArrayBuffer
+function base64ToArrayBuffer(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+// Import RSA private key from PEM
+async function importPrivateKey(pemString) {
+  // Remove PEM header/footer and whitespace
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemContents = pemString
+    .replace(pemHeader, "")
+    .replace(pemFooter, "")
+    .replace(/\s/g, "");
+  
+  const binaryDer = base64ToArrayBuffer(pemContents);
+  
+  return await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    {
+      name: "RSA-OAEP",
+      hash: "SHA-256"
+    },
+    false,
+    ["decrypt"]
+  );
+}
+
+// Decrypt the message
+async function decryptMessage(encryptedBase64, privateKey) {
+  const encryptedData = base64ToArrayBuffer(encryptedBase64);
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "RSA-OAEP" },
+    privateKey,
+    encryptedData
+  );
+  
+  return new TextDecoder().decode(decrypted);
+}
+
+// Form submission
+document.getElementById("decodeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const resultEl = document.getElementById("result");
+  const encryptedText = document.getElementById("encryptedText").value.trim();
+  
+  try {
+    if (!privateKeyData) {
+      throw new Error("Please upload a private key file");
+    }
+    
+    // Import the private key
+    const privateKey = await importPrivateKey(privateKeyData);
+    
+    // Decrypt the message
+    const decryptedPassword = await decryptMessage(encryptedText, privateKey);
+    
+    // Show success result
+    resultEl.className = "result success";
+    resultEl.innerHTML = `
+      <div class="result-label">✓ Decrypted Password:</div>
+      <div class="result-value">${escapeHtml(decryptedPassword)}</div>
+      <button class="copy-button" onclick="copyToClipboard('${escapeHtml(decryptedPassword)}')">
+        📋 Copy to Clipboard
+      </button>
+    `;
+    
+  } catch (error) {
+    // Show error
+    resultEl.className = "result error";
+    resultEl.innerHTML = `
+      <div class="result-label">✗ Decryption Failed</div>
+      <div class="result-value">${escapeHtml(error.message)}</div>
+    `;
+  }
+});
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Copy to clipboard function
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = "✓ Copied!";
+    setTimeout(() => {
+      btn.textContent = originalText;
+    }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
