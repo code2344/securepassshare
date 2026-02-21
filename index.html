@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Secure Submission</title>
+</head>
+<body>
+
+<h2>Send Password Securely</h2>
+
+<form id="secureForm">
+  <label>Password:</label><br>
+  <input type="password" id="password" required>
+  <button type="submit">Send Securely</button>
+</form>
+
+<p id="status"></p>
+
+<script>
+// === Your RSA public key (DER base64 from step 2) ===
+const publicKeyBase64 = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAwrpKoudA8/leYULuPqeC4PhjhlEKJJYDYU2xTTvuPrPoO7P1eKdOPGNGDT3MO5oo17Zj3LScPSsvQgaf0Sg1lVfoRtbiWnGJz2zimbyZJv/XgIX+tPnghuNpvY38Yt4zlHMg3VdlMEWxdiGcXsvrr2Ln00lVyhqhSNfdzO/OrUjzu0JCMV8vMPTXzKG3wWoWVNES+tAI9uSaPUg/OdTwg2C92fUQR9VKfS9xFf9CMrWQLeydjmJ5pwZ1fpJkKQGKenVWnuYCPInn9QI6Y+7hqgFAX2lwocDB1vPRyk43VeZnUcZfBjKYKsKemH+3y5Ey1Vt0aaaFgWe4FCYKkqopP/0UdL1RG56UBA28XFYg4sX9ckx9ZjITdLBcyMPV7Hfamrv1QffA2LGzZKmDtxOs/2Zt2FeeHtg3Zd39HOlhl/jHAGFN9Zmb3SmPQd+eeCP0kesAeNhQ7+5/MstRu2He/s/Ig99vLl8vOsJeQHj0vyUmRQNSF2Q/FNJz7u5kRuWClLVaEOTL7yuaL99fh3mT0t+o36EWUU/wRnRrESGd9LplzUGLt4R0b9iCEicp9U+P/XC9e91r6cr18qcVMu+Tvr8x4tCwJTInBDooaCVrtWEmG8l8Rf2feV2BeBf+Kb9A0OT4qzQAqSZnkXHYEYglDSN7/dSqj2HLbLvPsbxFMA8CAwEAAQ==";
+
+// Convert base64 → ArrayBuffer
+function base64ToArrayBuffer(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+// Import RSA key into WebCrypto
+async function importPublicKey() {
+  return await crypto.subtle.importKey(
+    "spki",
+    base64ToArrayBuffer(publicKeyBase64),
+    {
+      name: "RSA-OAEP",
+      hash: "SHA-256"
+    },
+    false,
+    ["encrypt"]
+  );
+}
+
+// Encrypt text using RSA-OAEP
+async function encryptMessage(message) {
+  const key = await importPublicKey();
+  const encoded = new TextEncoder().encode(message);
+
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "RSA-OAEP" },
+    key,
+    encoded
+  );
+
+  // Convert to base64 for Formspree transport
+  const bytes = new Uint8Array(ciphertext);
+  let binary = "";
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
+
+document.getElementById("secureForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const password = document.getElementById("password").value;
+  const encrypted = await encryptMessage(password);
+
+  await fetch("https://formspree.io/f/YOUR_FORMSPREE_ENDPOINT", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      encrypted_password: encrypted
+    })
+  });
+
+  document.getElementById("status").textContent =
+    "Sent. Only the private key holder can decrypt this.";
+});
+</script>
+
+</body>
+</html>
